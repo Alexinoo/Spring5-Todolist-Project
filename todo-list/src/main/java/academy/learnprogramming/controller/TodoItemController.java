@@ -13,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 
@@ -48,8 +49,13 @@ public class TodoItemController {
 
     // display form
     @GetMapping(Mappings.ADD_ITEM)
-    public String addEditItem(Model model){
-        TodoItem todoItem = new TodoItem("","", LocalDate.now());
+    public String addEditItem(@RequestParam(required = false, defaultValue = "-1") int id,
+                              Model model){
+        log.info("editing id = {}", id);
+        TodoItem todoItem = todoItemServiceInterface.getItem(id);
+        if (todoItem == null){
+             todoItem = new TodoItem("","", LocalDate.now());
+        }
         model.addAttribute(AttributeNames.TODO_ITEM, todoItem);
         return ViewNames.ADD_ITEM;
     }
@@ -57,7 +63,27 @@ public class TodoItemController {
     @PostMapping(Mappings.ADD_ITEM)
     public String processItem(@ModelAttribute(AttributeNames.TODO_ITEM) TodoItem todoItem){
         log.info("todoItem from form = {}",todoItem);
-        todoItemServiceInterface.addItem(todoItem);
+        if (todoItem.getId() == 0){
+            todoItemServiceInterface.addItem(todoItem);
+        }else{
+            todoItemServiceInterface.updateItem(todoItem);
+        }
         return "redirect:/" + Mappings.ITEMS;
     }
+
+    @GetMapping(Mappings.VIEW_ITEM)
+    public String viewItem(@RequestParam int id , Model model){
+        TodoItem todoItem = todoItemServiceInterface.getItem(id);
+        model.addAttribute(AttributeNames.TODO_ITEM, todoItem);
+        return ViewNames.VIEW_ITEM;
+    }
+
+    @GetMapping(Mappings.DELETE_ITEM)
+    public String deleteItem(@RequestParam int id){
+        log.info("Deleting item with id = {}",id);
+        todoItemServiceInterface.removeItem(id);
+        return "redirect:/"+ Mappings.ITEMS;
+    }
+
+
 }
